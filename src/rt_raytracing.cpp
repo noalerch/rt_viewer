@@ -7,7 +7,6 @@
 
 #include "cg_utils2.h"  // Used for OBJ-mesh loading
 #include <stdlib.h>     // Needed for drand48()
-#include <random>
 
 namespace rt {
 
@@ -19,6 +18,35 @@ struct Scene {
     std::vector<Triangle> mesh;
     Box mesh_bbox;
 } g_scene;
+
+// taken from RTOW
+float random_float() {
+    static std::uniform_real_distribution<float> distribution(0.0, 1.0);
+    static std::mt19937 generator;
+    return distribution(generator);
+}
+
+float random_float(float min, float max) {
+    static std::uniform_real_distribution<float> distribution(min, max);
+    static std::mt19937 generator;
+    return distribution(generator);
+}
+
+glm::vec3 random_vector() {
+    return glm::vec3(random_float(), random_float(), random_float());
+}
+
+glm::vec3 random_vector(float min, float max) {
+    return glm::vec3(random_float(min, max), random_float(min, max), random_float(min, max));
+}
+
+glm::vec3 random_in_unit_sphere() {
+    while (true) {
+        auto p = random_vector(-1,1);
+        if (pow(glm::length(p), 2) >= 1) continue;
+        return p;
+    }
+}
 
 bool hit_world(const Ray &r, float t_min, float t_max, HitRecord &rec)
 {
@@ -69,13 +97,19 @@ glm::vec3 color(RTContext &rtx, const Ray &r, int max_bounces)
     if (max_bounces < 0) return glm::vec3(0.0f);
 
     HitRecord rec;
-    if (hit_world(r, 0.0f, 9999.0f, rec)) {
+    // nonzero min prevents some artifacts
+    if (hit_world(r, 0.0001f, 9999.0f, rec)) {
         rec.normal = glm::normalize(rec.normal);  // Always normalise before use!
-        if (rtx.show_normals) { return rec.normal * 0.5f + 0.5f; }
+        if (rtx.show_normals) {
+            return rec.normal * 0.5f + 0.5f;
+        }
 
         // Implement lighting for materials here
         // ...
-        return glm::vec3(0.0f);
+        glm::vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+        return 0.5f * color(rtx, Ray(rec.p, target - rec.p), max_bounces - 1);
+
+        // return glm::vec3(0.0f);
     }
 
     // If no hit, return sky color
@@ -113,12 +147,6 @@ void setupScene(RTContext &rtx, const char *filename)
     //}
 }
 
-// taken for RTOW
-inline float random_float() {
-    static std::uniform_real_distribution<float> distribution(0.0, 1.0);
-    static std::mt19937 generator;
-    return distribution(generator);
-}
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "openmp-use-default-none"
@@ -134,7 +162,7 @@ void updateLine(RTContext &rtx, int y)
     glm::vec3 origin(0.0f, 0.0f, 0.0f);
     glm::mat4 world_from_view = glm::inverse(rtx.view);
 
-    // do we need different offsets for u and v?
+    // random offset for antialiasing
     float random_offset_u = random_float();
     float random_offset_v = random_float();
 
