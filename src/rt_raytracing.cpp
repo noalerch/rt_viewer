@@ -111,10 +111,13 @@ void setupScene(RTContext &rtx, const char *filename)
     auto white = std::make_shared<Lambertian>(glm::vec3(1.0f,1.0f,1.0f));
     auto black = std::make_shared<Lambertian>(glm::vec3(1.0f,0.0f,0.0f));
     auto metal = std::make_shared<Metal>(glm::vec3(1.0f,1.0f,1.0f));
+    auto metal_dark = std::make_shared<Metal>(glm::vec3(0.5f,0.5f,0.5f));
+    auto glass = std::make_shared<Dielectric>(1.0f);
+    auto crappy_glass = std::make_shared<Dielectric>(0.3f);
 
     g_scene.ground = Sphere(glm::vec3(0.0f, -1000.5f, 0.0f), 1000.0f, grass);
     g_scene.spheres = {
-        Sphere(glm::vec3(0.0f, 0.0f, 0.0f), 0.5f, red),
+        Sphere(glm::vec3(0.0f, 0.0f, 0.0f), 0.5f, metal_dark),
         Sphere(glm::vec3(1.0f, 0.0f, 0.0f), 0.5f, green),
         Sphere(glm::vec3(-1.0f, 0.0f, 0.0f), 0.5f, blue),
         Sphere(glm::vec3(1.0f, 1.5f, 0.0f), 0.3f, white),
