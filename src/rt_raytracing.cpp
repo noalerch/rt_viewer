@@ -7,6 +7,7 @@
 
 #include "cg_utils2.h"  // Used for OBJ-mesh loading
 #include <stdlib.h>     // Needed for drand48()
+#include <random>
 
 namespace rt {
 
@@ -112,6 +113,15 @@ void setupScene(RTContext &rtx, const char *filename)
     //}
 }
 
+// taken for RTOW
+inline float random_float() {
+    static std::uniform_real_distribution<float> distribution(0.0, 1.0);
+    static std::mt19937 generator;
+    return distribution(generator);
+}
+
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "openmp-use-default-none"
 // MODIFY THIS FUNCTION!
 void updateLine(RTContext &rtx, int y)
 {
@@ -124,11 +134,16 @@ void updateLine(RTContext &rtx, int y)
     glm::vec3 origin(0.0f, 0.0f, 0.0f);
     glm::mat4 world_from_view = glm::inverse(rtx.view);
 
-    // You can try parallelising this loop by uncommenting this line:
-    //#pragma omp parallel for schedule(dynamic)
+    // do we need different offsets for u and v?
+    float random_offset_u = random_float();
+    float random_offset_v = random_float();
+
+    #pragma omp parallel for schedule(dynamic)
     for (int x = 0; x < nx; ++x) {
-        float u = (float(x) + 0.5f) / float(nx);
-        float v = (float(y) + 0.5f) / float(ny);
+        // float u = (float(x) + 0.5f) / float(nx);
+        float u = (random_offset_u + float(x) + 0.5f) / float(nx);
+        // float v = (float(y) + 0.5f) / float(ny);
+        float v = (random_offset_v + float(y) + 0.5f) / float(ny);
         Ray r(origin, lower_left_corner + u * horizontal + v * vertical);
         r.A = glm::vec3(world_from_view * glm::vec4(r.A, 1.0f));
         r.B = glm::vec3(world_from_view * glm::vec4(r.B, 0.0f));
@@ -148,6 +163,7 @@ void updateLine(RTContext &rtx, int y)
         rtx.image[y * nx + x] += glm::vec4(c, 1.0f);
     }
 }
+#pragma clang diagnostic pop
 
 void updateImage(RTContext &rtx)
 {
