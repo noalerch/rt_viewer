@@ -7,6 +7,7 @@
 
 #include "cg_utils2.h"  // Used for OBJ-mesh loading
 #include <stdlib.h>     // Needed for drand48()
+#include "rt_extra.h" // written by us!
 
 namespace rt {
 
@@ -19,34 +20,6 @@ struct Scene {
     Box mesh_bbox;
 } g_scene;
 
-// taken from RTOW
-float random_float() {
-    static std::uniform_real_distribution<float> distribution(0.0, 1.0);
-    static std::mt19937 generator;
-    return distribution(generator);
-}
-
-float random_float(float min, float max) {
-    static std::uniform_real_distribution<float> distribution(min, max);
-    static std::mt19937 generator;
-    return distribution(generator);
-}
-
-glm::vec3 random_vector() {
-    return glm::vec3(random_float(), random_float(), random_float());
-}
-
-glm::vec3 random_vector(float min, float max) {
-    return glm::vec3(random_float(min, max), random_float(min, max), random_float(min, max));
-}
-
-glm::vec3 random_in_unit_sphere() {
-    while (true) {
-        auto p = random_vector(-1,1);
-        if (pow(glm::length(p), 2) >= 1) continue;
-        return p;
-    }
-}
 
 bool hit_world(const Ray &r, float t_min, float t_max, HitRecord &rec)
 {
@@ -126,6 +99,8 @@ void setupScene(RTContext &rtx, const char *filename)
         Sphere(glm::vec3(0.0f, 0.0f, 0.0f), 0.5f),
         Sphere(glm::vec3(1.0f, 0.0f, 0.0f), 0.5f),
         Sphere(glm::vec3(-1.0f, 0.0f, 0.0f), 0.5f),
+        Sphere(glm::vec3(1.0f, 1.5f, 0.0f), 0.3f),
+        Sphere(glm::vec3(1.0f, 1.5f, 2.0f), 0.1f),
     };
     //g_scene.boxes = {
     //    Box(glm::vec3(0.0f, -0.25f, 0.0f), glm::vec3(0.25f)),
