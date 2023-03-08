@@ -97,8 +97,8 @@ glm::vec3 color(RTContext &rtx, const Ray &r, int max_bounces)
     if (max_bounces < 0) return glm::vec3(0.0f);
 
     HitRecord rec;
-    // nonzero min prevents some artifacts
-    if (hit_world(r, 0.0001f, 9999.0f, rec)) {
+    // nonzero min prevents shadow acne
+    if (hit_world(r, 0.001f, 9999.0f, rec)) {
         rec.normal = glm::normalize(rec.normal);  // Always normalise before use!
         if (rtx.show_normals) {
             return rec.normal * 0.5f + 0.5f;
@@ -106,7 +106,7 @@ glm::vec3 color(RTContext &rtx, const Ray &r, int max_bounces)
 
         // Implement lighting for materials here
         // ...
-        glm::vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+        glm::vec3 target = rec.p + rec.normal + glm::normalize(random_in_unit_sphere());
         return 0.5f * color(rtx, Ray(rec.p, target - rec.p), max_bounces - 1);
 
         // return glm::vec3(0.0f);
