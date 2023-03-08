@@ -4,6 +4,7 @@
 #include "rt_sphere.h"
 #include "rt_triangle.h"
 #include "rt_box.h"
+#include "rt_material.h"
 
 #include "cg_utils2.h"  // Used for OBJ-mesh loading
 #include <stdlib.h>     // Needed for drand48()
@@ -78,9 +79,18 @@ glm::vec3 color(RTContext &rtx, const Ray &r, int max_bounces)
         }
 
         // Implement lighting for materials here
-        // ...
-        glm::vec3 target = rec.p + rec.normal + glm::normalize(random_in_unit_sphere());
-        return 0.5f * color(rtx, Ray(rec.p, target - rec.p), max_bounces - 1);
+       // Ray target;
+        // glm::vec3 target = rec.p + rec.normal + glm::normalize(random_in_unit_sphere());
+        // rt::Ray target_ray = rt::Ray(rec.p, target - rec.p);
+        glm::vec3 attenuation = glm::vec3(1.0f);
+        rt::Ray scattered;
+        if (rec.material->scatter(r, rec, attenuation, scattered)) {
+            return attenuation * color(rtx, scattered, max_bounces - 1);
+        }
+        else {
+            return glm::vec3(0.0f, 0.0f, 0.0f);
+        }
+        // return 0.5f * color(rtx, target_ray, max_bounces - 1);
 
         // return glm::vec3(0.0f);
     }
@@ -94,13 +104,22 @@ glm::vec3 color(RTContext &rtx, const Ray &r, int max_bounces)
 // MODIFY THIS FUNCTION!
 void setupScene(RTContext &rtx, const char *filename)
 {
-    g_scene.ground = Sphere(glm::vec3(0.0f, -1000.5f, 0.0f), 1000.0f);
+    auto red = std::make_shared<Lambertian>(glm::vec3(1.0f,0.0f,0.0f));
+    auto green = std::make_shared<Lambertian>(glm::vec3(0.0f,1.0f,0.0f));
+    auto grass = std::make_shared<Lambertian>(glm::vec3(0.2f,0.9f,0.1f));
+    auto blue = std::make_shared<Lambertian>(glm::vec3(0.0f,0.0f,1.0f));
+    auto white = std::make_shared<Lambertian>(glm::vec3(1.0f,1.0f,1.0f));
+    auto black = std::make_shared<Lambertian>(glm::vec3(1.0f,0.0f,0.0f));
+    auto metal = std::make_shared<Metal>(glm::vec3(1.0f,1.0f,1.0f));
+
+    g_scene.ground = Sphere(glm::vec3(0.0f, -1000.5f, 0.0f), 1000.0f, grass);
     g_scene.spheres = {
-        Sphere(glm::vec3(0.0f, 0.0f, 0.0f), 0.5f),
-        Sphere(glm::vec3(1.0f, 0.0f, 0.0f), 0.5f),
-        Sphere(glm::vec3(-1.0f, 0.0f, 0.0f), 0.5f),
-        Sphere(glm::vec3(1.0f, 1.5f, 0.0f), 0.3f),
-        Sphere(glm::vec3(1.0f, 1.5f, 2.0f), 0.1f),
+        Sphere(glm::vec3(0.0f, 0.0f, 0.0f), 0.5f, red),
+        Sphere(glm::vec3(1.0f, 0.0f, 0.0f), 0.5f, green),
+        Sphere(glm::vec3(-1.0f, 0.0f, 0.0f), 0.5f, blue),
+        Sphere(glm::vec3(1.0f, 1.5f, 0.0f), 0.3f, white),
+        Sphere(glm::vec3(1.0f, 1.5f, 2.0f), 0.1f, black),
+        Sphere(glm::vec3(3.0f, 1.5f, 2.0f), 0.6f, metal),
     };
     //g_scene.boxes = {
     //    Box(glm::vec3(0.0f, -0.25f, 0.0f), glm::vec3(0.25f)),

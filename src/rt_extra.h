@@ -2,8 +2,7 @@
 // Created by noax on 3/8/23.
 //
 
-#ifndef RT_VIEWER_RT_EXTRA_H
-#define RT_VIEWER_RT_EXTRA_H
+#pragma once
 
 #include <glm/glm.hpp>
 #include <cstdlib>
@@ -41,8 +40,16 @@ namespace rt
         }
     }
 
+    bool near_zero(glm::vec3 vec) {
+        const auto s = 1e-8;
+        return (fabs(vec[0]) < s) && (fabs(vec[1]) < s) && (fabs(vec[2]) < s);
+    }
+
+    glm::vec3 reflect(const glm::vec3& v, const glm::vec3& n) {
+        return v - 2 * glm::dot(v, n) * n;
+    }
+
 
 
 }
 
-#endif //RT_VIEWER_RT_EXTRA_H

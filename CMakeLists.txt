@@ -55,7 +55,7 @@ if(APPLE)
 endif(APPLE)
 
 # Create build files for application
-add_executable(${PROJECT_NAME} ${PROJECT_SRCS} src/rt_extra.h)
+add_executable(${PROJECT_NAME} ${PROJECT_SRCS} src/rt_extra.h src/rt_material.h)
 
 # Link against libraries
 target_link_libraries(${PROJECT_NAME} glfw ${PROJECT_LIBRARIES} ${GLFW_LIBRARIES})
