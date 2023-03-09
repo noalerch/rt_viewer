@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <algorithm>
 #include <map>
+#include <random>
 
 namespace cg {
 
@@ -340,5 +341,6 @@ static bool objMeshUVLoad(OBJMeshUV &mesh, const std::string &filename)
 
     return true;
 }
+
 
 }  // namespace cg

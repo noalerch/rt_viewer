@@ -4,9 +4,11 @@
 #include "rt_sphere.h"
 #include "rt_triangle.h"
 #include "rt_box.h"
+#include "rt_material.h"
 
 #include "cg_utils2.h"  // Used for OBJ-mesh loading
 #include <stdlib.h>     // Needed for drand48()
+#include "rt_extra.h" // written by us!
 
 namespace rt {
 
@@ -18,6 +20,7 @@ struct Scene {
     std::vector<Triangle> mesh;
     Box mesh_bbox;
 } g_scene;
+
 
 bool hit_world(const Ray &r, float t_min, float t_max, HitRecord &rec)
 {
@@ -68,13 +71,28 @@ glm::vec3 color(RTContext &rtx, const Ray &r, int max_bounces)
     if (max_bounces < 0) return glm::vec3(0.0f);
 
     HitRecord rec;
-    if (hit_world(r, 0.0f, 9999.0f, rec)) {
+    // nonzero min prevents shadow acne
+    if (hit_world(r, 0.001f, 9999.0f, rec)) {
         rec.normal = glm::normalize(rec.normal);  // Always normalise before use!
-        if (rtx.show_normals) { return rec.normal * 0.5f + 0.5f; }
+        if (rtx.show_normals) {
+            return rec.normal * 0.5f + 0.5f;
+        }
 
         // Implement lighting for materials here
-        // ...
-        return glm::vec3(0.0f);
+       // Ray target;
+        // glm::vec3 target = rec.p + rec.normal + glm::normalize(random_in_unit_sphere());
+        // rt::Ray target_ray = rt::Ray(rec.p, target - rec.p);
+        glm::vec3 attenuation = glm::vec3(1.0f);
+        rt::Ray scattered;
+        if (rec.material->scatter(r, rec, attenuation, scattered)) {
+            return attenuation * color(rtx, scattered, max_bounces - 1);
+        }
+        else {
+            return glm::vec3(0.0f, 0.0f, 0.0f);
+        }
+        // return 0.5f * color(rtx, target_ray, max_bounces - 1);
+
+        // return glm::vec3(0.0f);
     }
 
     // If no hit, return sky color
@@ -86,11 +104,25 @@ glm::vec3 color(RTContext &rtx, const Ray &r, int max_bounces)
 // MODIFY THIS FUNCTION!
 void setupScene(RTContext &rtx, const char *filename)
 {
-    g_scene.ground = Sphere(glm::vec3(0.0f, -1000.5f, 0.0f), 1000.0f);
+    auto red = std::make_shared<Lambertian>(glm::vec3(1.0f,0.0f,0.0f));
+    auto green = std::make_shared<Lambertian>(glm::vec3(0.0f,1.0f,0.0f));
+    auto grass = std::make_shared<Lambertian>(glm::vec3(0.2f,0.9f,0.1f));
+    auto blue = std::make_shared<Lambertian>(glm::vec3(0.0f,0.0f,1.0f));
+    auto white = std::make_shared<Lambertian>(glm::vec3(1.0f,1.0f,1.0f));
+    auto black = std::make_shared<Lambertian>(glm::vec3(1.0f,0.0f,0.0f));
+    auto metal = std::make_shared<Metal>(glm::vec3(1.0f,1.0f,1.0f));
+    auto metal_dark = std::make_shared<Metal>(glm::vec3(0.5f,0.5f,0.5f));
+    auto glass = std::make_shared<Dielectric>(1.0f);
+    auto crappy_glass = std::make_shared<Dielectric>(0.3f);
+
+    g_scene.ground = Sphere(glm::vec3(0.0f, -1000.5f, 0.0f), 1000.0f, grass);
     g_scene.spheres = {
-        Sphere(glm::vec3(0.0f, 0.0f, 0.0f), 0.5f),
-        Sphere(glm::vec3(1.0f, 0.0f, 0.0f), 0.5f),
-        Sphere(glm::vec3(-1.0f, 0.0f, 0.0f), 0.5f),
+        Sphere(glm::vec3(0.0f, 0.0f, 0.0f), 0.5f, metal_dark),
+        Sphere(glm::vec3(1.0f, 0.0f, 0.0f), 0.5f, green),
+        Sphere(glm::vec3(-1.0f, 0.0f, 0.0f), 0.5f, blue),
+        Sphere(glm::vec3(1.0f, 1.5f, 0.0f), 0.3f, white),
+        Sphere(glm::vec3(1.0f, 1.5f, 2.0f), 0.1f, black),
+        Sphere(glm::vec3(3.0f, 1.5f, 2.0f), 0.6f, metal),
     };
     //g_scene.boxes = {
     //    Box(glm::vec3(0.0f, -0.25f, 0.0f), glm::vec3(0.25f)),
@@ -112,6 +144,9 @@ void setupScene(RTContext &rtx, const char *filename)
     //}
 }
 
+
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "openmp-use-default-none"
 // MODIFY THIS FUNCTION!
 void updateLine(RTContext &rtx, int y)
 {
@@ -124,11 +159,16 @@ void updateLine(RTContext &rtx, int y)
     glm::vec3 origin(0.0f, 0.0f, 0.0f);
     glm::mat4 world_from_view = glm::inverse(rtx.view);
 
-    // You can try parallelising this loop by uncommenting this line:
-    //#pragma omp parallel for schedule(dynamic)
+    // random offset for antialiasing
+    float random_offset_u = random_float();
+    float random_offset_v = random_float();
+
+    #pragma omp parallel for schedule(dynamic)
     for (int x = 0; x < nx; ++x) {
-        float u = (float(x) + 0.5f) / float(nx);
-        float v = (float(y) + 0.5f) / float(ny);
+        // float u = (float(x) + 0.5f) / float(nx);
+        float u = (random_offset_u + float(x) + 0.5f) / float(nx);
+        // float v = (float(y) + 0.5f) / float(ny);
+        float v = (random_offset_v + float(y) + 0.5f) / float(ny);
         Ray r(origin, lower_left_corner + u * horizontal + v * vertical);
         r.A = glm::vec3(world_from_view * glm::vec4(r.A, 1.0f));
         r.B = glm::vec3(world_from_view * glm::vec4(r.B, 0.0f));
@@ -148,6 +188,7 @@ void updateLine(RTContext &rtx, int y)
         rtx.image[y * nx + x] += glm::vec4(c, 1.0f);
     }
 }
+#pragma clang diagnostic pop
 
 void updateImage(RTContext &rtx)
 {
