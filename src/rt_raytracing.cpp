@@ -160,8 +160,16 @@ void updateLine(RTContext &rtx, int y)
     glm::mat4 world_from_view = glm::inverse(rtx.view);
 
     // random offset for antialiasing
-    float random_offset_u = random_float();
-    float random_offset_v = random_float();
+    float random_offset_u;
+    float random_offset_v;
+
+    if (rtx.anti_aliasing_enabled) {
+        random_offset_u = random_float();
+        random_offset_v = random_float();
+    } else {
+        random_offset_u = 0.0f;
+        random_offset_v = 0.0f;
+    }
 
     #pragma omp parallel for schedule(dynamic)
     for (int x = 0; x < nx; ++x) {

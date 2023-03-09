@@ -134,6 +134,14 @@ void drawImage(Context &ctx)
 // MODIFY THIS FUNCTION
 void showGui(Context &ctx)
 {
+    /////////////////////////////
+    // Add support for high DPI displays
+    static bool high_dpi = false;
+    ImGui::Checkbox("High DPI", &high_dpi);
+    auto high_dpi_scale = high_dpi ? 2.0f : 1.0f;
+    ImGui::SetWindowFontScale(high_dpi_scale);
+    /////////////////////////////
+
     if (ImGui::SliderInt("Max bounces", &ctx.rtx.max_bounces, 0, 10)) {
         rt::resetAccumulation(ctx.rtx);
     }
@@ -143,7 +151,7 @@ void showGui(Context &ctx)
     }
     if (ImGui::Checkbox("Show normals", &ctx.rtx.show_normals)) { rt::resetAccumulation(ctx.rtx); }
     // Add more settings and parameters here
-    // ...
+    if (ImGui::Checkbox("Anti-aliasing enabled", &ctx.rtx.anti_aliasing_enabled)) { rt::resetAccumulation(ctx.rtx); }
 
     ImGui::Text("Progress");
     ImGui::ProgressBar(float(ctx.rtx.current_frame) / ctx.rtx.max_frames);
