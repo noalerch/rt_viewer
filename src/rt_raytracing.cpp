@@ -47,13 +47,15 @@ bool hit_world(const Ray &r, float t_min, float t_max, HitRecord &rec)
             rec = temp_rec;
         }
     }
-    for (int i = 0; i < g_scene.mesh.size(); ++i) {
-        if (g_scene.mesh[i].hit(r, t_min, closest_so_far, temp_rec)) {
-            hit_anything = true;
-            closest_so_far = temp_rec.t;
-            rec = temp_rec;
-        }
-    }
+	if (g_scene.mesh_bbox.hit(r, t_min, closest_so_far, temp_rec)) {
+		for (int i = 0; i < g_scene.mesh.size(); ++i) {
+			if (g_scene.mesh[i].hit(r, t_min, closest_so_far, temp_rec)) {
+				hit_anything = true;
+				closest_so_far = temp_rec.t;
+				rec = temp_rec;
+			}
+		}
+	}
     return hit_anything;
 }
 
@@ -112,8 +114,6 @@ void setupScene(RTContext &rtx, const char *filename)
     auto black = std::make_shared<Lambertian>(glm::vec3(1.0f,0.0f,0.0f));
     auto metal = std::make_shared<Metal>(glm::vec3(1.0f,1.0f,1.0f));
     auto metal_dark = std::make_shared<Metal>(glm::vec3(0.5f,0.5f,0.5f));
-    auto glass = std::make_shared<Dielectric>(1.0f);
-    auto crappy_glass = std::make_shared<Dielectric>(0.3f);
 
     g_scene.ground = Sphere(glm::vec3(0.0f, -1000.5f, 0.0f), 1000.0f, grass);
     g_scene.spheres = {
@@ -130,18 +130,27 @@ void setupScene(RTContext &rtx, const char *filename)
     //    Box(glm::vec3(-1.0f, -0.25f, 0.0f), glm::vec3(0.25f)),
     //};
 
-    //cg::OBJMesh mesh;
-    //cg::objMeshLoad(mesh, filename);
-    //g_scene.mesh.clear();
-    //for (int i = 0; i < mesh.indices.size(); i += 3) {
-    //    int i0 = mesh.indices[i + 0];
-    //    int i1 = mesh.indices[i + 1];
-    //    int i2 = mesh.indices[i + 2];
-    //    glm::vec3 v0 = mesh.vertices[i0] + glm::vec3(0.0f, 0.135f, 0.0f);
-    //    glm::vec3 v1 = mesh.vertices[i1] + glm::vec3(0.0f, 0.135f, 0.0f);
-    //    glm::vec3 v2 = mesh.vertices[i2] + glm::vec3(0.0f, 0.135f, 0.0f);
-    //    g_scene.mesh.push_back(Triangle(v0, v1, v2));
-    //}
+    cg::OBJMesh mesh;
+    cg::objMeshLoad(mesh, filename);
+    g_scene.mesh.clear();
+	glm::vec3 ub; // bounding box upper bound
+	glm::vec3 lb; // bounding box lower bound
+    for (int i = 0; i < mesh.indices.size(); i += 3) {
+        int i0 = mesh.indices[i + 0];
+        int i1 = mesh.indices[i + 1];
+        int i2 = mesh.indices[i + 2];
+        glm::vec3 v0 = mesh.vertices[i0] + glm::vec3(0.0f, 0.135f, 0.0f);
+        glm::vec3 v1 = mesh.vertices[i1] + glm::vec3(0.0f, 0.135f, 0.0f);
+        glm::vec3 v2 = mesh.vertices[i2] + glm::vec3(0.0f, 0.135f, 0.0f);
+		ub = glm::max(glm::max(glm::max(ub, v0), v1), v2);
+		lb = glm::min(glm::min(glm::min(lb, v0), v1), v2);
+        g_scene.mesh.push_back(Triangle(v0, v1, v2, metal));
+    }
+	// Define axis-aligned bounding box
+	glm::vec3 center = (ub + lb) * 0.5f;
+	glm::vec3 rad = glm::abs(ub - lb) * 0.5f;
+
+	g_scene.mesh_bbox = Box(center, rad);
 }
 
 

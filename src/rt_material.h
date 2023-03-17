@@ -60,39 +60,6 @@ namespace rt
             }
             glm::vec3 albedo;
     };
-
-    // Does not work properly, likely due to issue with front face
-    class Dielectric : public Material {
-    public:
-        Dielectric(float index_of_refraction) : ir(index_of_refraction) {}
-
-        virtual bool scatter(
-                const Ray& r_in, const HitRecord& rec, glm::vec3& attenuation, Ray& scattered
-        ) const override {
-            attenuation = glm::vec3(1.0, 1.0, 1.0);
-            // correctness of below line disputed
-            double refraction_ratio = (0 > glm::dot(r_in.direction(), rec.normal)) ? (1.0 / ir) : ir; //assuming front face is normal
-
-            glm::vec3 unit_direction = glm::normalize(r_in.direction());
-            float cos_theta = fmin(glm::dot(-unit_direction, rec.normal), 1.0);
-            float sin_theta = sqrt(1.0 - cos_theta*cos_theta);
-
-            bool cannot_refract = refraction_ratio * sin_theta > 1.0;
-            glm::vec3 direction;
-
-            if (cannot_refract)
-                direction = reflect(unit_direction, rec.normal);
-            else
-                direction = refract(unit_direction, rec.normal, refraction_ratio);
-
-            scattered = Ray(rec.p, direction);
-            return true;
-        }
-
-        public:
-            double ir; // Index of Refraction
-    };
-
 }
 
 #endif //RT_VIEWER_RT_MATERIAL_H

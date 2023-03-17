@@ -43,6 +43,7 @@ struct OBJMesh {
     std::vector<glm::vec3> vertices;
     std::vector<glm::vec3> normals;
     std::vector<std::uint32_t> indices;
+	//std::shared_ptr<rt::Material> material;
 };
 
 // Struct for Wavefront (OBJ) triangle meshes that are indexed and has
