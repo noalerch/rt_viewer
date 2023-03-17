@@ -125,6 +125,8 @@ void drawImage(Context &ctx)
     // Activate program and pass uniform for texture unit
     glUseProgram(ctx.program);
     glUniform1i(glGetUniformLocation(ctx.program, "u_texture"), 0);
+	auto casted_gamma_correction_enabled = (float) ctx.rtx.gamma_correction_enabled;
+	glUniform1f(glGetUniformLocation(ctx.program, "u_gamma_correction_enabled"), casted_gamma_correction_enabled);
 
     // Draw fullscreen quad (without any vertex buffers)
     glBindVertexArray(ctx.emptyVAO);
@@ -152,6 +154,7 @@ void showGui(Context &ctx)
     if (ImGui::Checkbox("Show normals", &ctx.rtx.show_normals)) { rt::resetAccumulation(ctx.rtx); }
     // Add more settings and parameters here
     if (ImGui::Checkbox("Anti-aliasing enabled", &ctx.rtx.anti_aliasing_enabled)) { rt::resetAccumulation(ctx.rtx); }
+	if (ImGui::Checkbox("Gamma correction enabled", &ctx.rtx.gamma_correction_enabled)) { rt::resetAccumulation(ctx.rtx); }
 
     ImGui::Text("Progress");
     ImGui::ProgressBar(float(ctx.rtx.current_frame) / ctx.rtx.max_frames);
