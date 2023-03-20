@@ -103,6 +103,11 @@ glm::vec3 color(RTContext &rtx, const Ray &r, int max_bounces)
     return (1.0f - t) * rtx.ground_color + t * rtx.sky_color;
 }
 
+void updateGroundColor(RTContext &rtx)
+{
+	g_scene.ground = Sphere(glm::vec3(0.0f, -1000.5f, 0.0f), 1000.f, std::make_shared<Lambertian>(rtx.ground_color));
+}
+
 // MODIFY THIS FUNCTION!
 void setupScene(RTContext &rtx, const char *filename)
 {
@@ -114,13 +119,16 @@ void setupScene(RTContext &rtx, const char *filename)
     auto black = std::make_shared<Lambertian>(glm::vec3(1.0f,0.0f,0.0f));
     auto metal = std::make_shared<Metal>(glm::vec3(1.0f,1.0f,1.0f));
     auto metal_dark = std::make_shared<Metal>(glm::vec3(0.5f,0.5f,0.5f));
+	auto ground_color = std::make_shared<Lambertian>(rtx.ground_color);
 
-    g_scene.ground = Sphere(glm::vec3(0.0f, -1000.5f, 0.0f), 1000.0f, grass);
+    g_scene.ground = Sphere(glm::vec3(0.0f, -1000.5f, 0.0f), 1000.0f, green);
     g_scene.spheres = {
-        Sphere(glm::vec3(0.0f, 0.0f, 0.0f), 0.5f, metal_dark),
-        Sphere(glm::vec3(1.0f, 0.0f, 0.0f), 0.5f, green),
-        Sphere(glm::vec3(-1.0f, 0.0f, 0.0f), 0.5f, blue),
-        Sphere(glm::vec3(1.0f, 1.5f, 0.0f), 0.3f, white),
+        Sphere(glm::vec3(0.0f, 0.0f, 0.0f), 0.2f, metal_dark),
+        Sphere(glm::vec3(1.5f, 0.0f, 0.0f), 0.2f, green),
+        Sphere(glm::vec3(-1.0f, 0.0f, 0.0f), 0.2f, blue),
+		Sphere(glm::vec3(-1.0f, 0.0f, 1.0f), 0.1f, red),
+		Sphere(glm::vec3(-1.0f, 0.0f, 1.5f), 0.1f, red),
+        Sphere(glm::vec3(1.0f, 1.5f, 0.0f), 0.2f, white),
         Sphere(glm::vec3(1.0f, 1.5f, 2.0f), 0.1f, black),
         Sphere(glm::vec3(3.0f, 1.5f, 2.0f), 0.6f, metal),
     };
