@@ -125,8 +125,8 @@ void setupScene(RTContext &rtx, const char *filename)
     g_scene.spheres = {
         Sphere(glm::vec3(0.0f, 0.0f, 0.0f), 0.2f, metal_dark),
         Sphere(glm::vec3(1.5f, 0.0f, 0.0f), 0.2f, green),
-        Sphere(glm::vec3(-1.0f, 0.0f, 0.0f), 0.2f, blue),
-		Sphere(glm::vec3(-1.0f, 0.0f, 1.0f), 0.1f, red),
+        Sphere(glm::vec3(-1.0f, 0.0f, 0.0f), 0.2f, white),
+		Sphere(glm::vec3(-1.0f, 0.0f, 1.0f), 0.1f, blue),
 		Sphere(glm::vec3(-1.0f, 0.0f, 1.5f), 0.1f, red),
         Sphere(glm::vec3(1.0f, 1.5f, 0.0f), 0.2f, white),
         Sphere(glm::vec3(1.0f, 1.5f, 2.0f), 0.1f, black),
